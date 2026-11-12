@@ -1,0 +1,45 @@
+flowchart TB
+    subgraph A["A. Video ingestion — apps/video_ingest"]
+        V["Video file (old match .mp4)"] --> FS["Frame sampler (ffmpeg, 1/2s)"]
+        FS --> SB["Score-bug reader (vision LLM + disk cache)"]
+        SB --> ED["Event deriver (diff consecutive readings, reject impossible transitions)"]
+    end
+
+    subgraph B["B. Cricket domain pack — pure data + adapter (domains/cricket/)"]
+        ONT["ontology.yaml (event types → upper ontology)"]
+        RUL["rules.yaml (significance rules + pull_context)"]
+        TPL["templates.yaml + persona.md"]
+        KGD["KG context data (players, venue, form, stakes)"]
+        AD["Adapter (raw events → ontology-typed events)"]
+    end
+
+    subgraph C["C. Core engine — domain-blind (core/)"]
+        UO["Upper ontology: Event · Milestone · Streak · Pressure · Momentum · Reversal · Storyline"]
+        SE["State engine (live metrics)"] --> PD["Pattern detectors (streak / pressure / momentum / reversal)"]
+        PD --> SS["Significance scorer (declarative rules + explanation trace, 0–100)"]
+        SS --> TR["Tier router (picks tier, assembles prompt context)"]
+        KG["Knowledge graph (static facts, query helpers)"] -.-> TR
+        NM["Narrative memory (recent lines + storyline tracker)"] -.-> TR
+        TR --> T0["Tier 0: templates, no LLM"]
+        TR --> T1["Tier 1: fast LLM, light context"]
+        TR --> T2["Tier 2: rich LLM + KG facts + storylines"]
+        T0 --> GC["Grounding checker (verify claims vs state/KG, regenerate once, template fallback)"]
+        T1 --> GC
+        T2 --> GC
+        GC -. "regenerate once on failure" .-> T2
+    end
+
+    subgraph D["D. Output & playback — apps/player"]
+        TTS["TTS engine (significance → prosody level)"] --> CT["commentary_track.json + audio files"]
+        CT --> PB["Playback page (video + text feed + audio, no overlapping clips)"]
+    end
+
+    ED --> AD
+    ONT -.-> AD
+    AD --> SE
+    UO -.-> SE
+    UO -.-> PD
+    RUL -.-> SS
+    KGD -.-> KG
+    TPL -.-> T0
+    GC --> TTS

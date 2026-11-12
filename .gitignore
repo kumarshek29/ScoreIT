@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Local secrets and configuration
+.env
+.env.*
+!.env.example
+
+# Local media and generated output
+*.mp4
+*.mkv
+*.mp3
+*.wav
+cache/
+artifacts/
+commentary_track.json
